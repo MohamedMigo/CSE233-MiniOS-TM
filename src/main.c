@@ -1,85 +1,104 @@
+#define _POSIX_C_SOURCE 200809L
+#include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/task.h"
+#include <unistd.h>
+#include "task.h"
 
-static void clear_input_buffer(void) {
+/* Read a full menu line; discard overlong input to keep future reads aligned. */
+static int read_line(const char *prompt, char *buffer, size_t size) {
     int c;
-    while ((c = getchar()) != '\n' && c != EOF);
+    size_t len;
+
+    fputs(prompt, stdout);
+    fflush(stdout);
+    if (fgets(buffer, (int)size, stdin) == NULL) return 0;
+    len = strlen(buffer);
+    if (len && buffer[len - 1] == '\n') {
+        buffer[len - 1] = '\0';
+    } else {
+        while ((c = getchar()) != '\n' && c != EOF) { }
+        puts("[Error] Input was too long.");
+        return -1;
+    }
+    return 1;
+}
+
+static int read_int(const char *prompt, int min, int max, int *value) {
+    char line[64];
+    char *end;
+    long parsed;
+    int r = read_line(prompt, line, sizeof(line));
+    if (r <= 0) return r;
+    errno = 0;
+    parsed = strtol(line, &end, 10);
+    while (*end == ' ' || *end == '\t') end++;
+    if (errno || end == line || *end != '\0' || parsed < min || parsed > max) {
+        printf("[Error] Enter an integer from %d to %d.\n", min, max);
+        return -1;
+    }
+    *value = (int)parsed;
+    return 1;
 }
 
 int main(void) {
-    int choice;
-    char cmd[MAX_CMD_LEN];
-    int burst, mem, task_id;
+    int choice, burst, memory_kb, task_id, r;
+    char command[MAX_CMD_LEN];
 
+    setvbuf(stdout, NULL, _IOLBF, 0);
     init_task_manager();
+    printf("MiniOS-TM | CSE233 Group 4 | Phase 1\n");
+    printf("Master Controller: PID=%ld, PPID=%ld\n",
+           (long)getpid(), (long)getppid());
 
-    while (1) {
+    for (;;) {
         update_background_tasks();
-        printf("\n--- MiniOS-TM (Phase 1: Process & System Calls Manager) ---\n");
-        printf("1. Submit & Run Foreground Task (Blocking)\n");
-        printf("2. Submit & Run Background Task (Non-Blocking)\n");
-        printf("3. Display All Tasks & Process States\n");
-        printf("4. Terminate a Running Task (kill)\n");
-        printf("5. Exit\n");
-        printf("Select an option: ");
-
-        if (scanf("%d", &choice) != 1) {
-            printf("[Error] Invalid input. Please enter a number.\n");
-            clear_input_buffer();
-            continue;
-        }
-        clear_input_buffer();
+        puts("\n========== MINI OS TASK MANAGER ==========");
+        puts("1. Submit & run FOREGROUND task");
+        puts("2. Submit & run BACKGROUND task");
+        puts("3. Display tasks / PID / states");
+        puts("4. Terminate a running task (SIGTERM)");
+        puts("5. Exit (clean up child processes)");
+        r = read_int("Select [1-5]: ", 1, 5, &choice);
+        if (r == 0) break;        /* Ctrl+D / closed input */
+        if (r < 0) continue;
 
         switch (choice) {
             case 1:
             case 2:
-                printf("Enter Linux command (e.g., ls -l, sleep 15, ps): ");
-                if (fgets(cmd, sizeof(cmd), stdin) == NULL) break;
-                cmd[strcspn(cmd, "\n")] = '\0';
-
-                printf("Enter estimated Burst Time (seconds): ");
-                if (scanf("%d", &burst) != 1 || burst < 0) {
-                    printf("[Error] Invalid burst time.\n");
-                    clear_input_buffer();
-                    break;
-                }
-
-                printf("Enter Memory Footprint (KB): ");
-                if (scanf("%d", &mem) != 1 || mem <= 0) {
-                    printf("[Error] Invalid memory size.\n");
-                    clear_input_buffer();
-                    break;
-                }
-                clear_input_buffer();
-
-                create_and_run_task(cmd, burst, mem, (choice == 2) ? 1 : 0);
+                r = read_line("Linux command (e.g. ls -l, sleep 20): ",
+                              command, sizeof(command));
+                if (r == 0) goto done;
+                if (r < 0) break;
+                r = read_int("Estimated burst time (seconds, 0-3600): ",
+                             0, 3600, &burst);
+                if (r == 0) goto done;
+                if (r < 0) break;
+                r = read_int("Estimated memory (KB, 1-1048576): ",
+                             1, 1048576, &memory_kb);
+                if (r == 0) goto done;
+                if (r < 0) break;
+                create_and_run_task(command, burst, memory_kb, choice == 2);
                 break;
-
             case 3:
                 display_tasks_table();
                 break;
-
             case 4:
                 display_tasks_table();
-                printf("Enter Task ID to terminate: ");
-                if (scanf("%d", &task_id) != 1) {
-                    printf("[Error] Invalid Task ID.\n");
-                    clear_input_buffer();
-                    break;
-                }
-                clear_input_buffer();
-                terminate_task(task_id);
+                r = read_int("Task ID to terminate: ", 1, MAX_TASKS, &task_id);
+                if (r == 0) goto done;
+                if (r > 0) terminate_task(task_id);
                 break;
-
             case 5:
-                printf("Exiting MiniOS-TM Phase 1. Goodbye!\n");
-                return 0;
-
+                goto done;
             default:
-                printf("[Error] Invalid choice. Select 1-5.\n");
+                break;
         }
     }
+done:
+    shutdown_task_manager();
+    puts("MiniOS-TM exited cleanly. Goodbye!");
     return 0;
 }

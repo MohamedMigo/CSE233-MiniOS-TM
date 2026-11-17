@@ -1,14 +1,17 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -std=c99 -Iinclude
-TARGET = minios_tm
-SRCS = src/main.c src/process_mgr.c
+CC := gcc
+CFLAGS := -std=c11 -Wall -Wextra -Wpedantic -O2 -Iinclude
+TARGET := minios_tm
+SOURCES := src/main.c src/process_mgr.c
 
 all: $(TARGET)
 
-$(TARGET): $(SRCS) include/task.h
-	$(CC) $(CFLAGS) $(SRCS) -o $(TARGET)
+$(TARGET): $(SOURCES) include/task.h
+	$(CC) $(CFLAGS) $(SOURCES) -o $@
+
+test: $(TARGET)
+	bash tests/test_phase1.sh
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) *.o
 
-.PHONY: all clean
+.PHONY: all test clean

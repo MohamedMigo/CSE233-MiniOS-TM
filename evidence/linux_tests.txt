@@ -1,0 +1,8 @@
+bash tests/test_phase1.sh
+
+[TEST 1] Foreground fork, execvp, getpid/getppid, waitpid
+[TEST 2] Quoted execvp argument
+[TEST 3] Missing executable -> exit 127
+[TEST 4] Background tasks, WNOHANG, kill and reaping
+[TEST 5] Clean exit terminates and reaps active children
+[PASS] All five phase-1 Linux tests passed.
