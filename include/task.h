@@ -2,6 +2,7 @@
 #define MINIOS_TASK_H
 
 #include <sys/types.h>
+#include <stddef.h>
 
 #define MAX_TASKS 50
 #define MAX_CMD_LEN 256
@@ -30,6 +31,15 @@ typedef struct {
     int term_signal;         /* Signal number when killed; 0 otherwise */
 } TaskPCB;
 
+/* Read-only summary used by the optional terminal dashboard. */
+typedef struct {
+    size_t total;
+    size_t running;
+    size_t completed;
+    size_t terminated;
+} TaskStats;
+
+void get_task_stats(TaskStats *stats);
 void init_task_manager(void);
 int create_and_run_task(const char *cmd_str, int burst_time, int memory_size,
                         int is_background);

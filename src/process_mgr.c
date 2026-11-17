@@ -9,11 +9,26 @@
 #include <time.h>
 #include <unistd.h>
 #include "task.h"
+#include "ui.h"
 
 static TaskPCB tasks[MAX_TASKS];
 static size_t task_count = 0;
 
 void init_task_manager(void) { task_count = 0; }
+
+void get_task_stats(TaskStats *stats) {
+    if (!stats) return;
+    memset(stats, 0, sizeof(*stats));
+    stats->total = task_count;
+    for (size_t i = 0; i < task_count; ++i) {
+        switch (tasks[i].state) {
+            case TASK_RUNNING: ++stats->running; break;
+            case TASK_COMPLETED: ++stats->completed; break;
+            case TASK_TERMINATED: ++stats->terminated; break;
+            default: break;
+        }
+    }
+}
 
 const char *get_state_name(TaskState state) {
     switch (state) {
@@ -224,10 +239,11 @@ void display_tasks_table(void) {
         if (t->state == TASK_RUNNING) snprintf(exit_display, sizeof(exit_display), "-");
         else if (t->term_signal) snprintf(exit_display, sizeof(exit_display), "SIG%d", t->term_signal);
         else snprintf(exit_display, sizeof(exit_display), "%d", t->exit_status);
-        printf("%-4d | %-24.24s | %-7ld | %-7ld | %-4s | %-5d | %-7d | %-11s | %-5s\n",
+        printf("%-4d | %-24.24s | %-7ld | %-7ld | %-4s | %-5d | %-7d | ",
                t->task_id, t->command, (long)t->pid, (long)t->parent_pid,
-               t->is_background ? "BG" : "FG", t->burst_time, t->memory_size,
-               get_state_name(t->state), exit_display);
+               t->is_background ? "BG" : "FG", t->burst_time, t->memory_size);
+        printf("%s%-11s%s | %-5s\n", ui_state_color(t->state),
+               get_state_name(t->state), ui_reset_color(), exit_display);
     }
     puts("=======================================================================================================");
 }

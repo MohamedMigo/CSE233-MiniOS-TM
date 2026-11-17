@@ -1,4 +1,4 @@
-# دليل التسليم والمناقشة - Phase 1 (MiniOS-TM)
+# دليل التسليم والمناقشة - MiniOS-TM v2 (Modern C11)
 
 ## قبل التسليم
 
@@ -65,3 +65,11 @@ No. In Phase 1 it is task metadata. Actual scheduling will be developed in later
 
 **Q10: Does Phase 1 support real-time continuous process monitoring?**  
 It checks background task completion on each menu refresh or new action, plus cleanup. A completed child may temporarily wait for the next check; full asynchronous reaping is not implemented here.
+
+## إضافات Modern C11
+- اختيار 6: Live Monitor يراجع حالات العمليات 1-15 مرة باستخدام waitpid(WNOHANG).
+- اختيار 7: System-call Inspector يشرح Linux process calls.
+- الألوان بتظهر في Interactive Terminal؛ ويمكن إيقافها بـ NO_COLOR=1 ./minios_tm.
+- واجهة المستخدم في src/ui.c منفصلة عن إدارة العمليات في src/process_mgr.c.
+- الاختبارات السبعة: make test.
+- الـLive Monitor مش Thread ولا asynchronous reaper (الميزات دي لمراحل قادمة).

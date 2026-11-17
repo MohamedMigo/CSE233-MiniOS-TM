@@ -1,9 +1,24 @@
-# MiniOS-TM — Phase 1: Processes & System Calls
+# MiniOS-TM v2.0 — Modern C11 CLI | Phase 1: Processes & System Calls
 
 **CSE233 Operating Systems | Galala University | Fall 2026**  
 **Approved Project:** Category 2 — Mini OS Task Manager  
 **Project:** MiniOS-TM: A Concurrent Process and Thread-Based Task Management System in Linux  
 **Group:** 04
+
+## What's new in v2.0: Modern CLI Edition
+
+This is still the **approved MiniOS-TM** Linux C11 project, not a separate demonstration.
+The original Phase 1 process calls, foreground/background behavior, TaskPCB, and five original menu choices are preserved.
+
+- **ANSI true-color interface** on supported interactive Linux terminals, automatically colorless when output is redirected or the NO_COLOR environment variable is set.
+- **Live overview** with accurate total, RUNNING, COMPLETED and TERMINATED counts derived from the TaskPCB table.
+- **Timed monitor** (menu 6): 1-15 snapshots of process states; uses waitpid(WNOHANG) on each refresh, not an asynchronous monitoring thread.
+- **System-call inspector** (menu 7) describes fork, execvp, getpid/getppid, waitpid and kill.
+- Separate src/ui.c and include/ui.h to keep presentation independent of the OS process-management module.
+- Run ./minios_tm --version to identify the version; run make test for seven Linux regression tests.
+
+New source files: src/ui.c and include/ui.h. Original student screenshots under evidence/student_screenshots/ show the earlier v1 interface; generated Linux v2 evidence is included in the submitted ZIP.
+
 
 ## 1. Team
 
@@ -54,10 +69,12 @@ MiniOS-TM_Phase1_Submission/
 ├── include/task.h              # TaskPCB and process state declarations
 ├── src/main.c                  # Interactive Master Controller CLI
 ├── src/process_mgr.c           # fork, exec, waitpid, PID, kill, cleanup
+├── src/ui.c                    # Modern UI, terminal color and system-call help
+├── include/ui.h                # UI declarations
 ├── Makefile                    # Build/run tests on Linux
 ├── README.md                   # This documentation
 ├── DEMO_GUIDE_AR.md            # Step-by-step live demonstration and discussion
-├── tests/test_phase1.sh        # Five automated Linux test scenarios
+├── tests/test_phase1.sh        # Seven automated Linux test scenarios
 └── evidence/                   # Genuine Linux terminal captures and test logs
 ```
 
@@ -153,7 +170,7 @@ Estimated memory: 64
 
 Expected: `execvp failed`, the child exits **127**, and the task is **TERMINATED**.
 
-Choose **5** to exit. All still-running child tasks receive SIGTERM (or SIGKILL
+Choose **6** to monitor task states or **7** to inspect the system calls. Choose **5** to exit. All still-running child tasks receive SIGTERM (or SIGKILL
 if unresponsive), and the Master Controller reaps them before exiting.
 
 ## 7. Task states and roles

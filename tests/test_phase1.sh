@@ -46,4 +46,19 @@ out=$(printf '2\nsleep 20\n20\n64\n5\n' | ./minios_tm 2>&1)
 assert_has "$out" '[CLEANUP] SIGTERM to task #1'
 assert_has "$out" 'MiniOS-TM exited cleanly'
 
-printf '[PASS] All five phase-1 Linux tests passed.\n'
+printf '[OK] Original five system-call tests passed.\n'
+
+printf '[TEST 6] Modern CLI overview, system-call inspector and version\n'
+out=$(printf '7\n5\n' | ./minios_tm 2>&1)
+assert_has "$out" 'LIVE OVERVIEW'
+assert_has "$out" 'SYSTEM CALL INSPECTOR'
+assert_has "$out" 'fork()'
+assert_has "$(./minios_tm --version)" 'v2.0'
+
+printf '[TEST 7] Timed process monitor displays updated task state\n'
+out=$(printf '2\nsleep 1\n1\n64\n6\n3\n3\n5\n' | ./minios_tm 2>&1)
+assert_has "$out" 'LIVE PROCESS MONITOR'
+assert_has "$out" '[MONITOR] Snapshot 3/3'
+assert_has "$out" 'COMPLETED'
+
+printf '[PASS] All seven Phase 1 + Modern CLI Linux tests passed.\n'
